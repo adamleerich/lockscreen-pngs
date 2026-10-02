@@ -1,0 +1,988 @@
+<title>Lockscreen Studio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@400;700&family=Montserrat:wght@500;700&family=Caveat:wght@600&family=Bebas+Neue&display=swap">
+<style>
+  :root {
+    --paper: #EEEBE3;
+    --paper-raised: #F8F6F1;
+    --ink: #23262B;
+    --ink-soft: #5B5F66;
+    --line: #D8D3C6;
+    --accent: #B8862E;
+    --accent-strong: #8F6720;
+    --accent-tint: #F1E4C7;
+    --danger: #A34438;
+    --shadow: 0 1px 2px rgba(35,38,43,0.06), 0 6px 20px rgba(35,38,43,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #15171B;
+      --paper-raised: #1D2025;
+      --ink: #ECE9E2;
+      --ink-soft: #9BA0A8;
+      --line: #303339;
+      --accent: #D9A54B;
+      --accent-strong: #EFC576;
+      --accent-tint: #332A17;
+      --danger: #E28376;
+      --shadow: 0 1px 2px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #15171B;
+    --paper-raised: #1D2025;
+    --ink: #ECE9E2;
+    --ink-soft: #9BA0A8;
+    --line: #303339;
+    --accent: #D9A54B;
+    --accent-strong: #EFC576;
+    --accent-tint: #332A17;
+    --danger: #E28376;
+    --shadow: 0 1px 2px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Work Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+  }
+  ::selection { background: var(--accent-tint); }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header.top {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  header.top h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  header.top p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  main.layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(320px, 380px) 1fr;
+    gap: 0;
+  }
+  @media (max-width: 900px) {
+    main.layout { grid-template-columns: 1fr; }
+    .preview-pane { order: -1; }
+  }
+
+  .rail {
+    border-right: 1px solid var(--line);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  @media (max-width: 900px) {
+    .rail { border-right: none; border-top: 1px solid var(--line); }
+  }
+
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    margin: 0 0 12px;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .row.between { justify-content: space-between; }
+
+  textarea, select, input[type="text"], input[type="number"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 9px 10px;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 84px;
+    line-height: 1.4;
+  }
+  textarea:focus, select:focus, input:focus, button:focus-visible, canvas:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  input[type="number"] { width: 68px; flex: none; }
+  input[type="range"] { flex: 1; accent-color: var(--accent); }
+
+  input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: none;
+    flex: none;
+    cursor: pointer;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 5px; }
+
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .swatch {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.15);
+    cursor: pointer;
+    padding: 0;
+  }
+  .swatch:hover { transform: scale(1.08); }
+
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .seg button {
+    background: var(--paper);
+    color: var(--ink-soft);
+    border: none;
+    padding: 7px 13px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    border-right: 1px solid var(--line);
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.active { background: var(--accent-tint); color: var(--accent-strong); font-weight: 600; }
+
+  .checkline {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-soft);
+  }
+  .checkline input { accent-color: var(--accent); }
+
+  button.btn {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 9px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  button.btn:hover { border-color: var(--accent); }
+  button.btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #1B1406;
+    font-weight: 600;
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 14.5px;
+  }
+  button.btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+  button.btn.primary:disabled {
+    background: var(--paper); color: var(--ink-soft); border-color: var(--line);
+    cursor: not-allowed;
+  }
+  button.btn.small { padding: 6px 10px; font-size: 12.5px; }
+
+  .status {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    min-height: 16px;
+    margin-top: 8px;
+  }
+  .status.error { color: var(--danger); }
+  .status.ok { color: var(--accent-strong); }
+
+  .mono { font-family: "IBM Plex Mono", monospace; }
+
+  .preview-pane {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    gap: 16px;
+    min-height: 60vh;
+  }
+
+  .phone-frame {
+    position: relative;
+    height: min(66vh, 640px);
+    width: auto;
+    max-width: 92vw;
+    aspect-ratio: var(--ar);
+    border-radius: 34px;
+    border: 2px solid var(--line);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    background: #000;
+  }
+  @media (max-width: 900px) {
+    .phone-frame { height: min(58vh, 560px); }
+  }
+  .phone-frame canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: default;
+  }
+  .phone-frame canvas.hoverable { cursor: grab; }
+  .phone-frame canvas.dragging { cursor: grabbing; }
+
+  .guide {
+    position: absolute;
+    left: 0; right: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .guide span {
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    background: rgba(0,0,0,0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .guide.top { top: 5%; height: 15%; border-top: 1px dashed rgba(255,255,255,0.35); border-bottom: 1px dashed rgba(255,255,255,0.35); align-items: flex-start; padding-top: 4px; }
+  .guide.bottom { bottom: 2%; height: 8%; border-top: 1px dashed rgba(255,255,255,0.35); align-items: flex-start; padding-top: 4px; }
+
+  .dims {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .history {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  .history-item {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    cursor: pointer;
+    width: 42px;
+    background: var(--paper-raised);
+  }
+  .history-item img { display: block; width: 100%; height: auto; }
+  .history-item button.remove {
+    position: absolute; top: 1px; right: 1px;
+    width: 14px; height: 14px;
+    line-height: 12px;
+    font-size: 10px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    cursor: pointer;
+    padding: 0;
+  }
+</style>
+
+<div class="app">
+  <header class="top">
+    <h1>Lockscreen Studio</h1>
+    <p>Compose a quote on a background color, then export it as a PNG sized for your phone.</p>
+  </header>
+
+  <main class="layout">
+    <div class="rail">
+
+      <div class="card">
+        <h2>Device size</h2>
+        <div class="field">
+          <select id="deviceSelect"></select>
+        </div>
+        <div class="row" id="customSizeRow" style="display:none;">
+          <div class="field" style="flex:1;">
+            <label for="customW">Width (px)</label>
+            <input type="number" id="customW" min="200" max="3000" />
+          </div>
+          <div class="field" style="flex:1;">
+            <label for="customH">Height (px)</label>
+            <input type="number" id="customH" min="200" max="4000" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Quote</h2>
+        <div class="field">
+          <label for="quoteText">Text</label>
+          <textarea id="quoteText" spellcheck="true"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Type</h2>
+        <div class="field">
+          <label for="fontFamily">Font</label>
+          <select id="fontFamily"></select>
+        </div>
+        <div class="field">
+          <label>Alignment</label>
+          <div class="seg" id="alignSeg">
+            <button data-align="left">Left</button>
+            <button data-align="center" class="active">Center</button>
+            <button data-align="right">Right</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="fontSize">Size — <span id="fontSizeVal" class="mono"></span>px</label>
+          <div class="row">
+            <input type="range" id="fontSize" />
+            <input type="number" id="fontSizeNum" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="lineHeight">Line height — <span id="lineHeightVal" class="mono"></span></label>
+          <input type="range" id="lineHeight" min="1" max="2" step="0.05" />
+        </div>
+        <div class="field">
+          <label class="checkline"><input type="checkbox" id="boldToggle" /> Bold</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Colors</h2>
+        <div class="field">
+          <label>Text color</label>
+          <div class="row">
+            <input type="color" id="fgColor" />
+            <input type="text" id="fgHex" class="mono" maxlength="7" />
+          </div>
+          <div class="swatches" id="fgSwatches"></div>
+        </div>
+        <div class="field">
+          <label>Background color</label>
+          <div class="row">
+            <input type="color" id="bgColor" />
+            <input type="text" id="bgHex" class="mono" maxlength="7" />
+          </div>
+          <div class="swatches" id="bgSwatches"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Position</h2>
+        <div class="row between">
+          <span class="dims mono" id="posReadout">—</span>
+          <button class="btn small" id="centerBtn">Center text</button>
+        </div>
+        <div class="field" style="margin-top:12px; margin-bottom: 0;">
+          <label class="checkline"><input type="checkbox" id="guideToggle" checked /> Show safe-area guide (top clock / bottom controls — not included in export)</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Export</h2>
+        <div class="field">
+          <label for="filenameInput">Filename</label>
+          <input type="text" id="filenameInput" class="mono" />
+        </div>
+        <button class="btn primary" id="downloadBtn">Download PNG</button>
+        <div class="status" id="statusLine"></div>
+      </div>
+
+    </div>
+
+    <div class="preview-pane">
+      <div class="phone-frame" id="phoneFrame">
+        <canvas id="canvas" tabindex="0" aria-label="Lock screen preview. Drag the text to reposition it."></canvas>
+        <div class="guide top" id="guideTop"><span>Clock &amp; date</span></div>
+        <div class="guide bottom" id="guideBottom"><span>Home indicator</span></div>
+      </div>
+      <div class="dims mono" id="dimsLabel"></div>
+      <div class="history" id="history"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DEVICES = [
+    { key: "pro-max", label: "iPhone 15/16 Pro Max — 1290×2796", w: 1290, h: 2796 },
+    { key: "plus", label: "iPhone 14/15/16 Plus — 1284×2778", w: 1284, h: 2778 },
+    { key: "pro", label: "iPhone 15/16 Pro — 1179×2556", w: 1179, h: 2556 },
+    { key: "standard", label: "iPhone 13/14/15/16 — 1170×2532", w: 1170, h: 2532 },
+    { key: "se", label: "iPhone SE / 8 — 750×1334", w: 750, h: 1334 },
+    { key: "custom", label: "Custom size", w: 1170, h: 2532 }
+  ];
+
+  var FONTS = [
+    { key: "system-sans", label: "System Sans", stack: '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif' },
+    { key: "system-serif", label: "System Serif", stack: 'Georgia, "Times New Roman", serif' },
+    { key: "fraunces", label: "Fraunces", stack: '"Fraunces", Georgia, serif' },
+    { key: "playfair", label: "Playfair Display", stack: '"Playfair Display", Georgia, serif' },
+    { key: "montserrat", label: "Montserrat", stack: '"Montserrat", "Helvetica Neue", sans-serif' },
+    { key: "caveat", label: "Handwritten (Caveat)", stack: '"Caveat", cursive' },
+    { key: "bebas", label: "Bold Display (Bebas Neue)", stack: '"Bebas Neue", sans-serif' },
+    { key: "mono", label: "Typewriter (Plex Mono)", stack: '"IBM Plex Mono", "Courier New", monospace' }
+  ];
+
+  var FG_PRESETS = ["#FFFFFF", "#111111", "#F5E6C8", "#E4B94F", "#2B2E33", "#F3D6D6"];
+  var BG_PRESETS = ["#14171B", "#F5F1E8", "#22334A", "#4A3B31", "#6E7A63", "#C9A9A6", "#000000", "#FFFFFF"];
+
+  function fontOf(key) {
+    for (var i = 0; i < FONTS.length; i++) if (FONTS[i].key === key) return FONTS[i];
+    return FONTS[0];
+  }
+  function deviceOf(key) {
+    for (var i = 0; i < DEVICES.length; i++) if (DEVICES[i].key === key) return DEVICES[i];
+    return DEVICES[0];
+  }
+
+  var state = {
+    deviceKey: "standard",
+    width: 1170,
+    height: 2532,
+    text: "Yippee ki-yay, muddafukka",
+    fontKey: "mono",
+    fontSize: Math.round(1170 * 0.085),
+    bold: false,
+    align: "left",
+    lineHeight: 1.3,
+    fg: "#E4B94F",
+    bg: "#14171B",
+    posX: 1170 / 2,
+    posY: 2532 / 2,
+    filenameManual: false,
+    filename: ""
+  };
+
+  var canvas = document.getElementById("canvas");
+  var ctx = canvas.getContext("2d");
+  var phoneFrame = document.getElementById("phoneFrame");
+
+  // ---------- populate static controls ----------
+  var deviceSelect = document.getElementById("deviceSelect");
+  DEVICES.forEach(function (d) {
+    var o = document.createElement("option");
+    o.value = d.key; o.textContent = d.label;
+    deviceSelect.appendChild(o);
+  });
+  deviceSelect.value = state.deviceKey;
+
+  var fontSelect = document.getElementById("fontFamily");
+  FONTS.forEach(function (f) {
+    var o = document.createElement("option");
+    o.value = f.key; o.textContent = f.label;
+    o.style.fontFamily = f.stack;
+    fontSelect.appendChild(o);
+  });
+  fontSelect.value = state.fontKey;
+
+  function buildSwatches(containerId, colors, onPick) {
+    var el = document.getElementById(containerId);
+    colors.forEach(function (c) {
+      var b = document.createElement("button");
+      b.className = "swatch";
+      b.style.background = c;
+      b.title = c;
+      b.type = "button";
+      b.addEventListener("click", function () { onPick(c); });
+      el.appendChild(b);
+    });
+  }
+  buildSwatches("fgSwatches", FG_PRESETS, function (c) { state.fg = c; syncColorInputs(); render(); });
+  buildSwatches("bgSwatches", BG_PRESETS, function (c) { state.bg = c; syncColorInputs(); render(); });
+
+  // ---------- element refs ----------
+  var els = {
+    quoteText: document.getElementById("quoteText"),
+    fontSize: document.getElementById("fontSize"),
+    fontSizeNum: document.getElementById("fontSizeNum"),
+    fontSizeVal: document.getElementById("fontSizeVal"),
+    lineHeight: document.getElementById("lineHeight"),
+    lineHeightVal: document.getElementById("lineHeightVal"),
+    boldToggle: document.getElementById("boldToggle"),
+    fgColor: document.getElementById("fgColor"),
+    fgHex: document.getElementById("fgHex"),
+    bgColor: document.getElementById("bgColor"),
+    bgHex: document.getElementById("bgHex"),
+    customW: document.getElementById("customW"),
+    customH: document.getElementById("customH"),
+    customSizeRow: document.getElementById("customSizeRow"),
+    posReadout: document.getElementById("posReadout"),
+    guideToggle: document.getElementById("guideToggle"),
+    guideTop: document.getElementById("guideTop"),
+    guideBottom: document.getElementById("guideBottom"),
+    filenameInput: document.getElementById("filenameInput"),
+    downloadBtn: document.getElementById("downloadBtn"),
+    statusLine: document.getElementById("statusLine"),
+    dimsLabel: document.getElementById("dimsLabel"),
+    history: document.getElementById("history")
+  };
+
+  function fontSizeBounds() {
+    return { min: Math.max(14, Math.round(state.width * 0.03)), max: Math.round(state.width * 0.26) };
+  }
+
+  function syncUIFromState() {
+    els.quoteText.value = state.text;
+    fontSelect.value = state.fontKey;
+    var b = fontSizeBounds();
+    els.fontSize.min = b.min; els.fontSize.max = b.max;
+    els.fontSizeNum.min = b.min; els.fontSizeNum.max = b.max;
+    els.fontSize.value = state.fontSize;
+    els.fontSizeNum.value = state.fontSize;
+    els.fontSizeVal.textContent = state.fontSize;
+    els.lineHeight.value = state.lineHeight;
+    els.lineHeightVal.textContent = state.lineHeight.toFixed(2);
+    els.boldToggle.checked = state.bold;
+    document.querySelectorAll("#alignSeg button").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.align === state.align);
+    });
+    syncColorInputs();
+    deviceSelect.value = state.deviceKey;
+    els.customSizeRow.style.display = state.deviceKey === "custom" ? "flex" : "none";
+    els.customW.value = state.width;
+    els.customH.value = state.height;
+    els.guideToggle.checked = state.guide !== false;
+    updateGuideVisibility();
+    updateFilenameField();
+    updatePosReadout();
+    updateCanvasSize();
+  }
+
+  function syncColorInputs() {
+    els.fgColor.value = state.fg; els.fgHex.value = state.fg;
+    els.bgColor.value = state.bg; els.bgHex.value = state.bg;
+  }
+
+  function updateGuideVisibility() {
+    var show = state.guide !== false;
+    els.guideTop.style.display = show ? "flex" : "none";
+    els.guideBottom.style.display = show ? "flex" : "none";
+  }
+
+  function slugify(text) {
+    var s = text.trim().toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 6)
+      .join("-");
+    return s || "lockscreen-quote";
+  }
+
+  function updateFilenameField() {
+    if (!state.filenameManual) {
+      state.filename = slugify(state.text) + "-" + state.width + "x" + state.height + ".png";
+      els.filenameInput.value = state.filename;
+    }
+  }
+
+  function updatePosReadout() {
+    els.posReadout.textContent = "x " + Math.round(state.posX) + " · y " + Math.round(state.posY);
+  }
+
+  function updateCanvasSize() {
+    canvas.width = state.width;
+    canvas.height = state.height;
+    phoneFrame.style.setProperty("--ar", state.width + "/" + state.height);
+    els.dimsLabel.textContent = state.width + " × " + state.height + " px";
+    render();
+  }
+
+  // ---------- layout + drawing ----------
+  var lastLayout = null;
+
+  function wrapText(context, text, maxWidth) {
+    var paragraphs = text.split("\n");
+    var lines = [];
+    paragraphs.forEach(function (para) {
+      if (para === "") { lines.push(""); return; }
+      var words = para.split(/\s+/).filter(Boolean);
+      var current = "";
+      words.forEach(function (word) {
+        var candidate = current ? current + " " + word : word;
+        if (context.measureText(candidate).width > maxWidth && current) {
+          lines.push(current);
+          current = word;
+        } else {
+          current = candidate;
+        }
+      });
+      if (current) lines.push(current);
+    });
+    return lines.length ? lines : [""];
+  }
+
+  function computeLayout() {
+    var font = fontOf(state.fontKey);
+    var weight = state.bold ? 700 : 400;
+    ctx.font = weight + " " + state.fontSize + "px " + font.stack;
+    var maxWidth = state.width * 0.84;
+    var lines = wrapText(ctx, state.text, maxWidth);
+    var widths = lines.map(function (l) { return ctx.measureText(l).width; });
+    var blockWidth = Math.max.apply(null, widths.concat([1]));
+    var lh = state.fontSize * state.lineHeight;
+    var totalH = lines.length * lh;
+    return { lines: lines, widths: widths, blockWidth: blockWidth, lh: lh, totalH: totalH, maxWidth: maxWidth };
+  }
+
+  function render() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = state.bg;
+    ctx.fillRect(0, 0, state.width, state.height);
+
+    var layout = computeLayout();
+    lastLayout = layout;
+
+    ctx.fillStyle = state.fg;
+    ctx.textBaseline = "middle";
+
+    var startY = state.posY - layout.totalH / 2 + layout.lh / 2;
+    layout.lines.forEach(function (line, i) {
+      var y = startY + i * layout.lh;
+      if (state.align === "left") {
+        ctx.textAlign = "left";
+        ctx.fillText(line, state.posX - layout.blockWidth / 2, y);
+      } else if (state.align === "right") {
+        ctx.textAlign = "right";
+        ctx.fillText(line, state.posX + layout.blockWidth / 2, y);
+      } else {
+        ctx.textAlign = "center";
+        ctx.fillText(line, state.posX, y);
+      }
+    });
+
+    updatePosReadout();
+  }
+
+  // ---------- pointer dragging ----------
+  var dragging = false;
+  var dragOffset = { x: 0, y: 0 };
+
+  function pointerToCanvas(e) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = state.width / rect.width;
+    var scaleY = state.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  }
+
+  function inBounds(p) {
+    if (!lastLayout) return false;
+    var halfW = lastLayout.blockWidth / 2 + state.width * 0.03;
+    var halfH = lastLayout.totalH / 2 + state.height * 0.015;
+    return Math.abs(p.x - state.posX) <= halfW && Math.abs(p.y - state.posY) <= halfH;
+  }
+
+  canvas.addEventListener("pointermove", function (e) {
+    if (dragging) {
+      var p = pointerToCanvas(e);
+      state.posX = p.x - dragOffset.x;
+      state.posY = p.y - dragOffset.y;
+      render();
+    } else {
+      var hover = inBounds(pointerToCanvas(e));
+      canvas.classList.toggle("hoverable", hover);
+    }
+  });
+
+  canvas.addEventListener("pointerdown", function (e) {
+    var p = pointerToCanvas(e);
+    if (inBounds(p)) {
+      dragging = true;
+      dragOffset.x = p.x - state.posX;
+      dragOffset.y = p.y - state.posY;
+      canvas.classList.add("dragging");
+      canvas.setPointerCapture(e.pointerId);
+      canvas.focus();
+      e.preventDefault();
+    }
+  });
+
+  function endDrag(e) {
+    if (dragging) {
+      dragging = false;
+      canvas.classList.remove("dragging");
+    }
+  }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+
+  canvas.addEventListener("keydown", function (e) {
+    var step = e.shiftKey ? 24 : 4;
+    var moved = true;
+    if (e.key === "ArrowLeft") state.posX -= step;
+    else if (e.key === "ArrowRight") state.posX += step;
+    else if (e.key === "ArrowUp") state.posY -= step;
+    else if (e.key === "ArrowDown") state.posY += step;
+    else moved = false;
+    if (moved) { e.preventDefault(); render(); }
+  });
+
+  // ---------- control wiring ----------
+  els.quoteText.addEventListener("input", function () {
+    state.text = els.quoteText.value;
+    updateFilenameField();
+    render();
+  });
+
+  fontSelect.addEventListener("change", function () {
+    state.fontKey = fontSelect.value;
+    ensureFontLoaded(function () { render(); });
+  });
+
+  document.getElementById("alignSeg").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-align]");
+    if (!btn) return;
+    state.align = btn.dataset.align;
+    document.querySelectorAll("#alignSeg button").forEach(function (b) {
+      b.classList.toggle("active", b === btn);
+    });
+    render();
+  });
+
+  els.fontSize.addEventListener("input", function () {
+    state.fontSize = parseInt(els.fontSize.value, 10);
+    els.fontSizeNum.value = state.fontSize;
+    els.fontSizeVal.textContent = state.fontSize;
+    render();
+  });
+  els.fontSizeNum.addEventListener("input", function () {
+    var v = parseInt(els.fontSizeNum.value, 10);
+    if (isNaN(v)) return;
+    var b = fontSizeBounds();
+    v = Math.max(b.min, Math.min(b.max * 1.5, v));
+    state.fontSize = v;
+    els.fontSize.value = Math.min(v, b.max);
+    els.fontSizeVal.textContent = v;
+    render();
+  });
+
+  els.lineHeight.addEventListener("input", function () {
+    state.lineHeight = parseFloat(els.lineHeight.value);
+    els.lineHeightVal.textContent = state.lineHeight.toFixed(2);
+    render();
+  });
+
+  els.boldToggle.addEventListener("change", function () {
+    state.bold = els.boldToggle.checked;
+    render();
+  });
+
+  function isValidHex(v) { return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v); }
+
+  els.fgColor.addEventListener("input", function () { state.fg = els.fgColor.value; els.fgHex.value = state.fg; render(); });
+  els.bgColor.addEventListener("input", function () { state.bg = els.bgColor.value; els.bgHex.value = state.bg; render(); });
+  els.fgHex.addEventListener("change", function () {
+    var v = els.fgHex.value.trim();
+    if (!v.startsWith("#")) v = "#" + v;
+    if (isValidHex(v)) { state.fg = v; els.fgColor.value = v.length === 4 ? expandHex(v) : v; render(); }
+    else els.fgHex.value = state.fg;
+  });
+  els.bgHex.addEventListener("change", function () {
+    var v = els.bgHex.value.trim();
+    if (!v.startsWith("#")) v = "#" + v;
+    if (isValidHex(v)) { state.bg = v; els.bgColor.value = v.length === 4 ? expandHex(v) : v; render(); }
+    else els.bgHex.value = state.bg;
+  });
+  function expandHex(v) {
+    return "#" + v.slice(1).split("").map(function (c) { return c + c; }).join("");
+  }
+
+  deviceSelect.addEventListener("change", function () {
+    var prevW = state.width, prevH = state.height;
+    var d = deviceOf(deviceSelect.value);
+    state.deviceKey = d.key;
+    if (d.key !== "custom") {
+      state.width = d.w; state.height = d.h;
+    }
+    // rescale position & font size proportionally
+    var scale = state.width / prevW;
+    state.posX *= scale; state.posY *= (state.height / prevH);
+    state.fontSize = Math.round(state.fontSize * scale);
+    els.customSizeRow.style.display = d.key === "custom" ? "flex" : "none";
+    els.customW.value = state.width; els.customH.value = state.height;
+    updateFilenameField();
+    var b = fontSizeBounds();
+    els.fontSize.min = b.min; els.fontSize.max = b.max;
+    els.fontSizeNum.min = b.min; els.fontSizeNum.max = b.max;
+    els.fontSize.value = Math.min(state.fontSize, b.max);
+    els.fontSizeNum.value = state.fontSize;
+    els.fontSizeVal.textContent = state.fontSize;
+    updateCanvasSize();
+  });
+
+  function applyCustomSize() {
+    var w = parseInt(els.customW.value, 10), h = parseInt(els.customH.value, 10);
+    if (!w || !h || w < 200 || h < 200) return;
+    var prevW = state.width, prevH = state.height;
+    state.width = w; state.height = h;
+    state.posX *= (w / prevW); state.posY *= (h / prevH);
+    updateFilenameField();
+    updateCanvasSize();
+  }
+  els.customW.addEventListener("change", applyCustomSize);
+  els.customH.addEventListener("change", applyCustomSize);
+
+  document.getElementById("centerBtn").addEventListener("click", function () {
+    state.posX = state.width / 2;
+    state.posY = state.height / 2;
+    render();
+  });
+
+  els.guideToggle.addEventListener("change", function () {
+    state.guide = els.guideToggle.checked;
+    updateGuideVisibility();
+  });
+
+  els.filenameInput.addEventListener("input", function () {
+    state.filenameManual = true;
+    state.filename = els.filenameInput.value;
+  });
+  els.filenameInput.addEventListener("blur", function () {
+    if (!els.filenameInput.value.trim()) {
+      state.filenameManual = false;
+      updateFilenameField();
+    }
+  });
+
+  // ---------- font loading ----------
+  function ensureFontLoaded(cb) {
+    var font = fontOf(state.fontKey);
+    var weight = state.bold ? 700 : 400;
+    var spec = weight + " " + state.fontSize + "px " + font.stack;
+    if (document.fonts && document.fonts.load) {
+      Promise.all([
+        document.fonts.load(spec).catch(function () {}),
+        document.fonts.load("400 16px " + font.stack).catch(function () {})
+      ]).then(function () { cb(); });
+      document.fonts.ready.then(function () { cb(); });
+    } else {
+      cb();
+    }
+  }
+
+  // ---------- history / gallery ----------
+  var history = [];
+
+  function pushHistory() {
+    var thumbW = 44;
+    var thumbH = Math.round(thumbW * state.height / state.width);
+    var t = document.createElement("canvas");
+    t.width = thumbW; t.height = thumbH;
+    t.getContext("2d").drawImage(canvas, 0, 0, state.width, state.height, 0, 0, thumbW, thumbH);
+    var entry = { thumb: t.toDataURL("image/png"), snapshot: JSON.parse(JSON.stringify(state)) };
+    history.unshift(entry);
+    if (history.length > 24) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    els.history.innerHTML = "";
+    history.forEach(function (entry, idx) {
+      var item = document.createElement("div");
+      item.className = "history-item";
+      var img = document.createElement("img");
+      img.src = entry.thumb;
+      img.alt = "Saved version";
+      item.appendChild(img);
+      var rm = document.createElement("button");
+      rm.className = "remove";
+      rm.textContent = "×";
+      rm.title = "Remove from history";
+      rm.addEventListener("click", function (e) {
+        e.stopPropagation();
+        history.splice(idx, 1);
+        renderHistory();
+      });
+      item.appendChild(rm);
+      item.addEventListener("click", function () {
+        Object.assign(state, JSON.parse(JSON.stringify(entry.snapshot)));
+        ensureFontLoaded(function () { syncUIFromState(); });
+      });
+      els.history.appendChild(item);
+    });
+  }
+
+  // ---------- download (plain browser save — this is the local, non-Claude build) ----------
+  function setStatus(msg, kind) {
+    els.statusLine.textContent = msg || "";
+    els.statusLine.className = "status" + (kind ? " " + kind : "");
+  }
+
+  els.downloadBtn.addEventListener("click", function () {
+    var filename = (els.filenameInput.value || slugify(state.text) + ".png").trim();
+    if (!/\.png$/i.test(filename)) filename += ".png";
+    setStatus("Preparing PNG…");
+    els.downloadBtn.disabled = true;
+    canvas.toBlob(function (blob) {
+      els.downloadBtn.disabled = false;
+      if (!blob) {
+        setStatus("Couldn't render the image. Try again.", "error");
+        return;
+      }
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      setStatus("Saved " + filename, "ok");
+      pushHistory();
+    }, "image/png");
+  });
+
+  // ---------- init ----------
+  syncUIFromState();
+  ensureFontLoaded(function () { render(); });
+})();
+</script>
